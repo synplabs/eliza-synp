@@ -40,6 +40,7 @@ RUN echo "VITE_PRIVY_APP_ID=${VITE_PRIVY_APP_ID}" >> .env
 RUN cat .env
 
 RUN pnpm install
+RUN pnpm add -D dotenv @types/dotenv
 RUN pnpm build
 
 # Production image
