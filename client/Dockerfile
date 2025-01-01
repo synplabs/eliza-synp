@@ -19,13 +19,22 @@ COPY client/src ./client/src
 COPY client/public ./client/public
 COPY client/index.html ./client/
 COPY client/postcss.config.js client/tailwind.config.js ./client/
-COPY client/.env ./client/
+COPY client/.env.example ./client/.env
 
 # Install pnpm
 RUN npm install -g pnpm@9.4.0
 
 # Install dependencies and build
 WORKDIR /app/client
+
+# Create .env file from build args
+ARG VITE_API_URL
+ARG VITE_PRIVY_APP_ID
+RUN if [ -n "$VITE_API_URL" ] ; then \
+    echo "VITE_API_URL=$VITE_API_URL" > .env ; \
+    echo "VITE_PRIVY_APP_ID=$VITE_PRIVY_APP_ID" >> .env ; \
+    fi
+
 RUN pnpm install
 RUN pnpm add -D dotenv
 RUN pnpm build
