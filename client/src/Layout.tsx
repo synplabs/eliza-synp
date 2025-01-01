@@ -1,11 +1,11 @@
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
 import { Outlet } from "react-router-dom";
+import { Header } from "./components/header/header";
 
 export default function Layout() {
     return (
         <SidebarProvider>
-            <AppSidebar />
+            <Header />
             <Outlet />
         </SidebarProvider>
     );
