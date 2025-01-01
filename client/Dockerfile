@@ -1,7 +1,11 @@
 FROM node:23.3.0-slim as builder
 
-# Install pnpm
-RUN npm install -g pnpm@9.4.0
+# Install pnpm and system dependencies
+RUN npm install -g pnpm@9.4.0 && \
+    apt-get update && \
+    apt-get install -y python3 make g++ git build-essential libtool autoconf automake && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
