@@ -26,14 +26,20 @@ RUN npm install -g pnpm@9.4.0
 # Install dependencies and build
 WORKDIR /app/client
 
+# Debug: Print build arguments
 ARG VITE_API_URL
 ARG VITE_PRIVY_APP_ID
+RUN echo "Build Args - VITE_API_URL: ${VITE_API_URL}"
+RUN echo "Build Args - VITE_PRIVY_APP_ID: ${VITE_PRIVY_APP_ID}"
 
-ENV VITE_API_URL=${VITE_API_URL}
-ENV VITE_PRIVY_APP_ID=${VITE_PRIVY_APP_ID}
+# Create .env file
+RUN echo "VITE_API_URL=${VITE_API_URL}" > .env
+RUN echo "VITE_PRIVY_APP_ID=${VITE_PRIVY_APP_ID}" >> .env
+
+# Debug: Print .env content
+RUN cat .env
 
 RUN pnpm install
-RUN pnpm add -D dotenv
 RUN pnpm build
 
 # Production image
@@ -42,17 +48,9 @@ FROM nginx:alpine
 # Copy built assets
 COPY --from=builder /app/client/dist /usr/share/nginx/html
 
-# Copy nginx config
-COPY client/nginx.conf /etc/nginx/templates/default.conf.template
-
-# Script to replace environment variables in nginx config
-COPY client/docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
-
-ENV VITE_API_URL=${VITE_API_URL}
-ENV VITE_PRIVY_APP_ID=${VITE_PRIVY_APP_ID}
+# Configure nginx
+COPY client/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 3000
 
-ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]
