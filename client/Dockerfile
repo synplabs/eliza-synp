@@ -5,15 +5,8 @@ RUN npm install -g pnpm@9.4.0
 
 WORKDIR /app
 
-# Copy only client files
-COPY package.json ./
-COPY tsconfig.json ./
-COPY vite.config.ts ./
-COPY postcss.config.js ./
-COPY tailwind.config.js ./
-COPY index.html ./
-COPY public ./public
-COPY src ./src
+# Copy all necessary files
+COPY . .
 
 # Install only client dependencies
 RUN pnpm install --no-workspace
