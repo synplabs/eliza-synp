@@ -1,19 +1,24 @@
 FROM node:23.3.0-slim as builder
 
-# Install pnpm and system dependencies
-RUN npm install -g pnpm@9.4.0 && \
-    apt-get update && \
-    apt-get install -y python3 make g++ git build-essential libtool autoconf automake && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+# Install pnpm
+RUN npm install -g pnpm@9.4.0
 
 WORKDIR /app
 
-# Copy all files instead of individual copies
-COPY . .
+# Copy only client files
+COPY package.json ./
+COPY tsconfig.json ./
+COPY vite.config.ts ./
+COPY postcss.config.js ./
+COPY tailwind.config.js ./
+COPY index.html ./
+COPY public ./public
+COPY src ./src
 
-# Install dependencies and build
-RUN pnpm install
+# Install only client dependencies
+RUN pnpm install --no-workspace
+
+# Build
 RUN pnpm build
 
 # Production image
