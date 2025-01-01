@@ -1,27 +1,43 @@
 FROM node:23.3.0-slim as builder
 
-# Install pnpm
-RUN npm install -g pnpm@9.4.0
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y python3 make g++ && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy all necessary files
-COPY . .
+# Copy workspace files
+COPY package.json pnpm-workspace.yaml ./
+COPY packages/core ./packages/core
 
-# Install only client dependencies
-RUN pnpm install --no-workspace
+# Copy client files
+COPY client/package.json ./client/
+COPY client/vite.config.ts client/tsconfig.json client/tsconfig.app.json client/tsconfig.node.json ./client/
+COPY client/src ./client/src
+COPY client/public ./client/public
+COPY client/index.html ./client/
+COPY client/postcss.config.js client/tailwind.config.js ./client/
+COPY client/.env ./client/
 
-# Build
+# Install pnpm
+RUN npm install -g pnpm@9.4.0
+
+# Install dependencies and build
+WORKDIR /app/client
+RUN pnpm install
+RUN pnpm add -D dotenv
 RUN pnpm build
 
 # Production image
 FROM nginx:alpine
 
-# Copy built assets from builder
-COPY --from=builder /app/dist /usr/share/nginx/html
+# Copy built assets
+COPY --from=builder /app/client/dist /usr/share/nginx/html
 
-# Configure nginx to listen on port 3000
-RUN sed -i 's/listen\s*80;/listen 3000;/g' /etc/nginx/conf.d/default.conf
+# Configure nginx
+COPY client/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 3000
 
