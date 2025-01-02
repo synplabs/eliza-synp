@@ -29,8 +29,8 @@ WORKDIR /app/client
 # Debug: Print build arguments
 ARG VITE_API_URL
 ARG VITE_PRIVY_APP_ID
-RUN echo "Build Args - VITE_API_URL: ${VITE_API_URL}"
-RUN echo "Build Args - VITE_PRIVY_APP_ID: ${VITE_PRIVY_APP_ID}"
+ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_PRIVY_APP_ID=${VITE_PRIVY_APP_ID}
 
 # Create .env file
 RUN echo "VITE_API_URL=${VITE_API_URL}" > .env
