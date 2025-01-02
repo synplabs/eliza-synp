@@ -8,6 +8,9 @@ RUN apt-get update && \
 
 WORKDIR /app
 
+# Install pnpm
+RUN npm install -g pnpm@9.4.0
+
 # Copy workspace files
 COPY package.json pnpm-workspace.yaml ./
 COPY packages/core ./packages/core
@@ -20,27 +23,15 @@ COPY client/public ./client/public
 COPY client/index.html ./client/
 COPY client/postcss.config.js client/tailwind.config.js ./client/
 
-# Install pnpm
-RUN npm install -g pnpm@9.4.0
-
-# Install dependencies and build
+# Set up environment
 WORKDIR /app/client
-
-# Debug: Print build arguments
 ARG VITE_API_URL
 ARG VITE_PRIVY_APP_ID
 ENV VITE_API_URL=${VITE_API_URL}
 ENV VITE_PRIVY_APP_ID=${VITE_PRIVY_APP_ID}
 
-# Create .env file
-RUN echo "VITE_API_URL=${VITE_API_URL}" > .env
-RUN echo "VITE_PRIVY_APP_ID=${VITE_PRIVY_APP_ID}" >> .env
-
-# Debug: Print .env content
-RUN cat .env
-
+# Install and build
 RUN pnpm install
-RUN pnpm add -D dotenv @types/dotenv
 RUN pnpm build
 
 # Production image
