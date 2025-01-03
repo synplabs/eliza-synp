@@ -7,7 +7,8 @@ import {
     generateCaption,
     generateImage,
     Media,
-    getEmbeddingZeroVector
+    getEmbeddingZeroVector,
+    Character,
 } from "@elizaos/core";
 import { composeContext } from "@elizaos/core";
 import { generateMessageResponse } from "@elizaos/core";
@@ -25,6 +26,34 @@ import { settings } from "@elizaos/core";
 import { createApiRouter } from "./api.ts";
 import * as fs from "fs";
 import * as path from "path";
+
+const extractMentions = (text: string) => {
+    const mentions = text.match(/@(\w+)/g);
+    return mentions?.map((mention) => mention.slice(1)) || [];
+};
+
+const getContextForMentions = async (
+    mentions: string[],
+    messages: Memory[],
+    allAgents?: Character[]
+) => {
+    if (!allAgents) return {};
+
+    const context: Record<string, Memory[]> = {};
+
+    for (const mention of mentions) {
+        const mentionedAgent = allAgents.find(
+            (a) => a.name.toLowerCase() === mention.toLowerCase()
+        );
+        if (mentionedAgent && mentionedAgent.id) {
+            // Get last 10 messages for context
+            const relevantMessages = messages.slice(-10);
+            context[mentionedAgent.id] = relevantMessages;
+        }
+    }
+
+    return context;
+};
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -69,6 +98,9 @@ Note that {{agentName}} is capable of reading/seeing/hearing various forms of me
 {{recentMessages}}
 
 {{actions}}
+
+# Mention Context
+{{mentionContext}}
 
 # Instructions: Write the next message for {{agentName}}.
 ` + messageCompletionFooter;
@@ -242,6 +274,90 @@ export class DirectClient {
                 await runtime.messageManager.addEmbeddingToMemory(memory);
                 await runtime.messageManager.createMemory(memory);
 
+                // Handle mentions
+                const mentions = extractMentions(text);
+                const mentionResponses: Content[] = [];
+
+                // If there are mentions, only the mentioned agents should respond
+                if (mentions.length > 0) {
+                    const mentionedAgents = mentions
+                        .map((mention) =>
+                            Array.from(this.agents.values()).find(
+                                (agent) =>
+                                    agent.character.name.toLowerCase() ===
+                                    mention.toLowerCase()
+                            )
+                        )
+                        .filter((agent) => agent !== undefined);
+
+                    // Get context for mentions
+                    const mentionContext = await getContextForMentions(
+                        mentions,
+                        [memory],
+                        Array.from(this.agents.values()).map((a) => a.character)
+                    );
+
+                    // Process the message for each mentioned agent
+                    for (const mentionedAgent of mentionedAgents) {
+                        if (!mentionedAgent) continue;
+
+                        // Ensure the mentioned agent is in the room
+                        await mentionedAgent.ensureConnection(
+                            mentionedAgent.agentId,
+                            roomId,
+                            mentionedAgent.character.name,
+                            mentionedAgent.character.name,
+                            "direct"
+                        );
+
+                        // Compose state for the mentioned agent
+                        const mentionedState =
+                            await mentionedAgent.composeState(memory, {
+                                agentName: mentionedAgent.character.name,
+                                mentionContext: JSON.stringify(mentionContext),
+                            });
+
+                        const mentionedContext = composeContext({
+                            state: mentionedState,
+                            template: messageHandlerTemplate,
+                        });
+
+                        // Generate response from mentioned agent
+                        const mentionedResponse = await generateMessageResponse(
+                            {
+                                runtime: mentionedAgent,
+                                context: mentionedContext,
+                                modelClass: ModelClass.LARGE,
+                            }
+                        );
+
+                        if (mentionedResponse) {
+                            // Save mentioned agent's response
+                            const mentionedResponseMessage: Memory = {
+                                id: stringToUuid(
+                                    messageId + "-" + mentionedAgent.agentId
+                                ),
+                                userId: mentionedAgent.agentId,
+                                agentId: mentionedAgent.agentId,
+                                roomId,
+                                content: mentionedResponse,
+                                embedding: getEmbeddingZeroVector(),
+                                createdAt: Date.now(),
+                            };
+
+                            await mentionedAgent.messageManager.createMemory(
+                                mentionedResponseMessage
+                            );
+                            mentionResponses.push(mentionedResponse);
+                        }
+                    }
+
+                    // Only return responses from mentioned agents
+                    res.json(mentionResponses);
+                    return;
+                }
+
+                // If no mentions, proceed with normal flow for the main agent
                 let state = await runtime.composeState(userMessage, {
                     agentName: runtime.character.name,
                 });
@@ -448,7 +564,9 @@ export class DirectClient {
 
         this.app.post("/:agentId/speak", async (req, res) => {
             const agentId = req.params.agentId;
-            const roomId = stringToUuid(req.body.roomId ?? "default-room-" + agentId);
+            const roomId = stringToUuid(
+                req.body.roomId ?? "default-room-" + agentId
+            );
             const userId = stringToUuid(req.body.userId ?? "user");
             const text = req.body.text;
 
@@ -462,7 +580,8 @@ export class DirectClient {
             // if runtime is null, look for runtime with the same name
             if (!runtime) {
                 runtime = Array.from(this.agents.values()).find(
-                    (a) => a.character.name.toLowerCase() === agentId.toLowerCase()
+                    (a) =>
+                        a.character.name.toLowerCase() === agentId.toLowerCase()
                 );
             }
 
@@ -533,7 +652,9 @@ export class DirectClient {
                 await runtime.messageManager.createMemory(responseMessage);
 
                 if (!response) {
-                    res.status(500).send("No response from generateMessageResponse");
+                    res.status(500).send(
+                        "No response from generateMessageResponse"
+                    );
                     return;
                 }
 
@@ -567,35 +688,51 @@ export class DirectClient {
                     },
                     body: JSON.stringify({
                         text: textToSpeak,
-                        model_id: process.env.ELEVENLABS_MODEL_ID || "eleven_multilingual_v2",
+                        model_id:
+                            process.env.ELEVENLABS_MODEL_ID ||
+                            "eleven_multilingual_v2",
                         voice_settings: {
-                            stability: parseFloat(process.env.ELEVENLABS_VOICE_STABILITY || "0.5"),
-                            similarity_boost: parseFloat(process.env.ELEVENLABS_VOICE_SIMILARITY_BOOST || "0.9"),
-                            style: parseFloat(process.env.ELEVENLABS_VOICE_STYLE || "0.66"),
-                            use_speaker_boost: process.env.ELEVENLABS_VOICE_USE_SPEAKER_BOOST === "true",
+                            stability: parseFloat(
+                                process.env.ELEVENLABS_VOICE_STABILITY || "0.5"
+                            ),
+                            similarity_boost: parseFloat(
+                                process.env.ELEVENLABS_VOICE_SIMILARITY_BOOST ||
+                                    "0.9"
+                            ),
+                            style: parseFloat(
+                                process.env.ELEVENLABS_VOICE_STYLE || "0.66"
+                            ),
+                            use_speaker_boost:
+                                process.env
+                                    .ELEVENLABS_VOICE_USE_SPEAKER_BOOST ===
+                                "true",
                         },
                     }),
                 });
 
                 if (!speechResponse.ok) {
-                    throw new Error(`ElevenLabs API error: ${speechResponse.statusText}`);
+                    throw new Error(
+                        `ElevenLabs API error: ${speechResponse.statusText}`
+                    );
                 }
 
                 const audioBuffer = await speechResponse.arrayBuffer();
 
                 // Set appropriate headers for audio streaming
                 res.set({
-                    'Content-Type': 'audio/mpeg',
-                    'Transfer-Encoding': 'chunked'
+                    "Content-Type": "audio/mpeg",
+                    "Transfer-Encoding": "chunked",
                 });
 
                 res.send(Buffer.from(audioBuffer));
-
             } catch (error) {
-                console.error("Error processing message or generating speech:", error);
+                console.error(
+                    "Error processing message or generating speech:",
+                    error
+                );
                 res.status(500).json({
                     error: "Error processing message or generating speech",
-                    details: error.message
+                    details: error.message,
                 });
             }
         });

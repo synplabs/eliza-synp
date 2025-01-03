@@ -4,6 +4,7 @@ import Home from "./routes/home";
 import Agents from "./routes/agents";
 import Litepaper from "./routes/litepaper";
 import Create from "./routes/create";
+import Chat from "./routes/chat";
 
 export const router = createBrowserRouter([
     {
@@ -19,7 +20,11 @@ export const router = createBrowserRouter([
         element: <Agents />,
     },
     {
+        path: "/agents/:agentId",
+        element: <Chat />,
+    },
+    {
         path: "/litepaper",
         element: <Litepaper />,
-    }
+    },
 ]);

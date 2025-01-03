@@ -649,6 +649,9 @@ export type Character = {
     /** Optional username */
     username?: string;
 
+    /** Avatar URL */
+    avatarUrl: string;
+
     /** Optional system prompt */
     system?: string;
 
