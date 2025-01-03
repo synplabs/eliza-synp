@@ -12,9 +12,11 @@ const FetchContext = createContext<CustomFetch | null>(null);
 export const FetchProvider = ({
     children,
     apiKey,
+    baseUrl,
 }: {
     children: ReactNode;
     apiKey: string;
+    baseUrl: string;
 }) => {
     const customFetch = async (url: string, options: FetchOptions = {}) => {
         const defaultHeaders = {
@@ -29,7 +31,10 @@ export const FetchProvider = ({
             },
         };
 
-        const response = await fetch(url, mergedOptions);
+        const response = await fetch(
+            `${baseUrl}${url.replace("api/", "")}`,
+            mergedOptions
+        );
 
         if (!response.ok) {
             throw new Error(`Fetch failed: ${response.status}`);

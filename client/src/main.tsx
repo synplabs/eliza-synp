@@ -12,7 +12,10 @@ const queryClient = new QueryClient();
 ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
         <QueryClientProvider client={queryClient}>
-            <FetchProvider apiKey={import.meta.env.VITE_API_KEY}>
+            <FetchProvider
+                apiKey={import.meta.env.VITE_API_KEY}
+                baseUrl={import.meta.env.VITE_API_URL}
+            >
                 <AgentCreationProvider>
                     <RouterProvider router={router} />
                 </AgentCreationProvider>
