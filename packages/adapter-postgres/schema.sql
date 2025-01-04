@@ -9,10 +9,29 @@
 -- DROP TABLE IF EXISTS memories CASCADE;
 -- DROP TABLE IF EXISTS rooms CASCADE;
 -- DROP TABLE IF EXISTS accounts CASCADE;
+-- DROP TABLE IF EXISTS agents CASCADE;
 
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_extension
+        WHERE extname = 'vector'
+    ) THEN
+        CREATE EXTENSION vector;
+    END IF;
+END $$;
 
-CREATE EXTENSION IF NOT EXISTS vector;
-CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_extension
+        WHERE extname = 'fuzzystrmatch'
+    ) THEN
+        CREATE EXTENSION fuzzystrmatch;
+    END IF;
+END $$;
 
 -- Create a function to determine vector dimension
 CREATE OR REPLACE FUNCTION get_embedding_dimension()

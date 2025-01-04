@@ -52,7 +52,7 @@ export default function Agents() {
                                         <img
                                             src={
                                                 agent.avatarUrl ||
-                                                "/default-agent.png"
+                                                "https://placehold.co/600x600"
                                             }
                                             alt={agent.name}
                                             className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:brightness-110"

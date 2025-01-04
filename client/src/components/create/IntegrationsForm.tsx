@@ -29,6 +29,46 @@ export const IntegrationsForm = ({
                 [key]: value,
             },
         });
+
+        const newClients = new Set(formData.clients || []);
+
+        if (key === "TELEGRAM_BOT_TOKEN") {
+            if (value) {
+                newClients.add("telegram");
+            } else {
+                newClients.delete("telegram");
+            }
+        }
+
+        if (
+            ["TWITTER_USERNAME", "TWITTER_EMAIL", "TWITTER_PASSWORD"].includes(
+                key
+            )
+        ) {
+            const hasAllTwitterSecrets = Boolean(
+                (key === "TWITTER_USERNAME"
+                    ? value
+                    : formData.settings?.secrets?.TWITTER_USERNAME) &&
+                    (key === "TWITTER_EMAIL"
+                        ? value
+                        : formData.settings?.secrets?.TWITTER_EMAIL) &&
+                    (key === "TWITTER_PASSWORD"
+                        ? value
+                        : formData.settings?.secrets?.TWITTER_PASSWORD)
+            );
+
+            if (hasAllTwitterSecrets) {
+                newClients.add("twitter");
+            } else {
+                newClients.delete("twitter");
+            }
+        }
+
+        if (
+            JSON.stringify([...newClients]) !== JSON.stringify(formData.clients)
+        ) {
+            onFieldChange("clients", [...newClients]);
+        }
     };
 
     const secrets = formData.settings?.secrets || {};

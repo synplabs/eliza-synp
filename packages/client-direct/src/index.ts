@@ -114,6 +114,8 @@ export class DirectClient {
     constructor() {
         elizaLogger.log("DirectClient constructor");
         this.app = express();
+        this.app.set("trust proxy", 1);
+
         this.app.use(cors());
         this.agents = new Map();
 

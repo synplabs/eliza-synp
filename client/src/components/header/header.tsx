@@ -1,11 +1,9 @@
 import ConnectWallet from "../connect-wallet/connect-wallet";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import github from "@/assets/icons/github.svg";
 import telegram from "@/assets/icons/telegram.svg";
 import x from "@/assets/icons/x.svg";
 import logo from "@/assets/images/logo.png";
-
 export function Header() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const location = useLocation();
@@ -69,19 +67,6 @@ export function Header() {
                             <img
                                 src={telegram}
                                 alt="Telegram"
-                                className="w-4 h-4 transition-all group-hover:brightness-200"
-                            />
-                        </div>
-                    </a>
-                    <a
-                        href="https://github.com/synplabs"
-                        target="_blank"
-                        className="group"
-                    >
-                        <div className="p-2 rounded-full transition-all group-hover:bg-[#00D2BE]/10 group-hover:drop-shadow-[0_0_12px_rgba(0,210,190,0.5)]">
-                            <img
-                                src={github}
-                                alt="Github"
                                 className="w-4 h-4 transition-all group-hover:brightness-200"
                             />
                         </div>
@@ -156,19 +141,6 @@ export function Header() {
                                 <img
                                     src={telegram}
                                     alt="Telegram"
-                                    className="w-4 h-4 transition-all group-hover:brightness-200"
-                                />
-                            </div>
-                        </a>
-                        <a
-                            href="https://github.com/synplabs"
-                            target="_blank"
-                            className="group"
-                        >
-                            <div className="p-2 rounded-full transition-all group-hover:bg-[#00D2BE]/10 group-hover:drop-shadow-[0_0_12px_rgba(0,210,190,0.5)]">
-                                <img
-                                    src={github}
-                                    alt="Github"
                                     className="w-4 h-4 transition-all group-hover:brightness-200"
                                 />
                             </div>

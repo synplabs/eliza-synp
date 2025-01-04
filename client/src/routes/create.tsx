@@ -12,12 +12,7 @@ import { MessagesForm } from "@/components/create/MessagesForm";
 import { StyleForm } from "@/components/create/StyleForm";
 import { FormTabs } from "@/components/create/FormTabs";
 import { FormNavigation } from "@/components/create/FormNavigation";
-import {
-    Character,
-    ArrayFields,
-    FormTab,
-    defaultCharacter,
-} from "@/types/character";
+import { Character, ArrayFields, defaultCharacter } from "@/types/character";
 import {
     validateSection,
     getValidationMessage,
@@ -25,6 +20,7 @@ import {
 } from "@/constants/create";
 import { IntegrationsForm } from "@/components/create/IntegrationsForm";
 import { useFetch } from "@/contexts/FetchContext";
+import { usePrivy } from "@privy-io/react-auth";
 
 export default function Create() {
     const queryClient = useQueryClient();
@@ -41,6 +37,7 @@ export default function Create() {
         setCurrentFormTab,
         clearState,
     } = useAgentCreation();
+    const { user } = usePrivy();
 
     const [validationError, setValidationError] = useState<string>("");
     const [isResetModalOpen, setIsResetModalOpen] = useState(false);
@@ -80,6 +77,10 @@ export default function Create() {
             const apiCharacter = {
                 ...character,
                 modelProvider: character.modelProvider[0], // Take the first provider from the array
+                details: {
+                    ...character.details, // Preserve existing details
+                    walletAddress: user?.wallet?.address,
+                },
             };
 
             const data = await fetch(`/api/agents/${character.username}/set`, {

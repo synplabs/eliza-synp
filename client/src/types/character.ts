@@ -71,6 +71,11 @@ export type Character = {
         };
         integrations?: IntegrationSettings;
     };
+    walletAddress?: string;
+    details?: {
+        walletAddress?: string;
+        [key: string]: any;
+    };
 };
 
 export type ArrayFields = Extract<

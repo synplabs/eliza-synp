@@ -2,13 +2,7 @@ import { useRef, useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import {
-    ImageIcon,
-    ArrowUpCircle,
-    Info,
-    MessageCircle,
-    Zap,
-} from "lucide-react";
+import { ArrowUpCircle, Zap } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import { Header } from "@/components/header/header";
@@ -35,7 +29,6 @@ const getContextForMentions = async (
             (a) => a.name.toLowerCase() === mention.toLowerCase()
         );
         if (mentionedAgent && mentionedAgent.id) {
-            // Get last 10 messages for context
             const relevantMessages = messages.slice(-10);
             context[mentionedAgent.id] = relevantMessages;
         }
@@ -282,7 +275,7 @@ export default function Chat() {
                                     <img
                                         src={
                                             agent?.avatarUrl ||
-                                            "/default-agent.png"
+                                            "https://placehold.co/600x600"
                                         }
                                         alt={agent?.name}
                                         className="w-full h-full object-cover"
@@ -470,7 +463,7 @@ export default function Chat() {
                                         <img
                                             src={
                                                 agent?.avatarUrl ||
-                                                "/default-agent.png"
+                                                "https://placehold.co/600x600"
                                             }
                                             alt={agent?.name}
                                             className="w-full h-full object-cover"
